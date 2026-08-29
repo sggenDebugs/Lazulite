@@ -31,6 +31,7 @@ namespace Lavelle.Stats32
         public RemoteScalar Stddev(RemoteVector data)
         {
             using var variance = Variance(data);
+            LContext.Synchronize();
             return LContext.Sqrt(variance).AsScalar();
         }
 
