@@ -49,18 +49,41 @@ var vec2 = new RemoteVector[]
 
 // two vectors with different variance
 float two_sample_t_test_vec0 = sctx.TwoSampleTTest(vec2[0], vec2[1]).Get();
-Console.WriteLine($"One-sample t-test for vec2[0] and vec2[1]: {two_sample_t_test_vec0}");
+Console.WriteLine($"Two-sample t-test for vec2[0] and vec2[1]: {two_sample_t_test_vec0}");
 
 // one vector has zero variance
 float two_sample_t_test_vec1 = sctx.TwoSampleTTest(vec2[0], vec2[2]).Get();
-Console.WriteLine($"One-sample t-test for vec2[0] and vec2[2]: {two_sample_t_test_vec1}");
+Console.WriteLine($"Two-sample t-test for vec2[0] and vec2[2]: {two_sample_t_test_vec1}");
 
 // one vector has one sample size (throws InvalidCastException when enabled)
 // float two_sample_t_test_vec2 = sctx.TwoSampleTTest(vec2[1], vec2[3]).Get();
-// Console.WriteLine($"One-sample t-test for vec2[1] and vec2[3]: {two_sample_t_test_vec2}");
+// Console.WriteLine($"Two-sample t-test for vec2[1] and vec2[3]: {two_sample_t_test_vec2}");
 
 // one vector has negative values
 float two_sample_t_test_vec3 = sctx.TwoSampleTTest(vec2[0], vec2[4]).Get();
-Console.WriteLine($"One-sample t-test for vec2[0] and vec2[4]: {two_sample_t_test_vec3}");
+Console.WriteLine($"Two-sample t-test for vec2[0] and vec2[4]: {two_sample_t_test_vec3}");
 float two_sample_t_test_vec4 = sctx.TwoSampleTTest(vec2[1], vec2[4]).Get();
-Console.WriteLine($"One-sample t-test for vec2[1] and vec2[4]: {two_sample_t_test_vec4}");
+Console.WriteLine($"Two-sample t-test for vec2[1] and vec2[4]: {two_sample_t_test_vec4}");
+
+/* Welch T-test */
+// Null hypothesis is zero (mu3 = mu4)
+float mu3 = 0;
+float mu4 = 0;
+float welch_t_test_vec1 = sctx.WelchTTest(vec2[0], vec2[1], mu3, mu4).Get();
+Console.WriteLine($"Welch t-test for vec2[0] and vec2[1]: {welch_t_test_vec1}");
+
+// Null hypothesis is not zero (mu3 != mu4)
+float welch_t_test_vec2 = sctx.WelchTTest(vec2[0], vec2[1], mu3, mu4 + 1).Get();
+Console.WriteLine($"Welch t-test for vec2[0] and vec2[1]: {welch_t_test_vec2}");
+
+// one vector has zero variance
+float welch_t_test_vec3 = sctx.WelchTTest(vec2[0], vec2[2], mu3, mu4).Get();
+Console.WriteLine($"Welch t-test for vec2[0] and vec2[2]: {welch_t_test_vec3}");
+
+// one vector has one sample size (throws InvalidCastException when enabled)
+// float welch_t_test_vec4 = sctx.WelchTTest(vec2[1], vec2[3], mu3, mu4).Get();
+// Console.WriteLine($"Welch t-test for vec2[1] and vec2[3]: {welch_t_test_vec3}");
+
+// one vector has negative values
+float welch_t_test_vec5 = sctx.WelchTTest(vec2[0], vec2[4], mu3, mu4).Get();
+Console.WriteLine($"Welch t-test for vec2[0] and vec2[4]: {welch_t_test_vec5}");

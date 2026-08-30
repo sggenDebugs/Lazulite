@@ -88,5 +88,43 @@ namespace Lavelle.Stats32
             return result;
         }
         // welch's t-test, ANOVA, chi-squared
+        public RemoteScalar WelchTTest(RemoteVector data1, RemoteVector data2, float mu1, float mu2)
+        {
+            if ((data1.Length < 2)||(data2.Length < 2))
+            {
+                throw new ArgumentException("Sample size must be at least 2.");
+            }
+
+            using var mean1 = Mean(data1);
+            using var mean2 = Mean(data2);
+
+            using var meanDiff = LContext.GetScalar(true);
+            LContext.Subtract(mean1, mean2, r: meanDiff);
+            
+            using var numer = LContext.GetScalar(true);
+            LContext.SubtractScalar(meanDiff, mu1 - mu2, r: numer);
+
+            using var variance1 = Variance(data1, true);
+            using var variance2 = Variance(data2, true);
+
+            using var dividedVarianceBySize1 = LContext.GetScalar(true);
+            LContext.DivideScalar(variance1, data1.Length, r: dividedVarianceBySize1);
+
+            using var dividedVarianceBySize2 = LContext.GetScalar(true);
+            LContext.DivideScalar(variance2, data2.Length, r: dividedVarianceBySize2);
+
+            using var sumVarianceBySize = LContext.GetScalar(true);
+            LContext.Add(dividedVarianceBySize1, dividedVarianceBySize2, r: sumVarianceBySize);
+
+            using var denom = LContext.GetScalar(true);
+            LContext.Sqrt(sumVarianceBySize, r: denom);
+            LContext.Synchronize();
+
+            var result = LContext.GetScalar(true);
+            LContext.Divide(numer, denom, r: result);
+
+            LContext.Synchronize();
+            return result;
+        }
     }
 }
