@@ -25,7 +25,11 @@ namespace Lavelle.Stats32
             using var mean = Mean(data);
             using var vec = LContext.GetVector(data.Length);
             _varianceKernel.Call(data.Length, vec, data, mean, sample ? data.Length - 1 : data.Length);
-            return LContext.Sum(vec).AsScalar();
+            var result = LContext.GetScalar(true);
+            LContext.Synchronize();
+            LContext.Sum(vec, r:result);
+            LContext.Synchronize();
+            return result;
         }
 
         public RemoteScalar Stddev(RemoteVector data, bool sample = false)

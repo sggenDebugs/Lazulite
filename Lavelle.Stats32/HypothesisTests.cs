@@ -1,8 +1,4 @@
-using System;
-using System.Collections.Generic;
-using System.Text;
 using Lavelle.Linalg32;
-using Microsoft.VisualBasic;
 
 namespace Lavelle.Stats32
 {
@@ -10,31 +6,47 @@ namespace Lavelle.Stats32
     {
         protected RemoteScalar PooledStddev(RemoteVector data1, RemoteVector data2)
         {
-            using var dfStddev1Prod = LContext.MultiplyScalar(
-                LContext.PowScalar(Stddev(data1), 2), 
-                data1.Length - 1
-                );
+            using var stddev1 = Stddev(data1, sample: true);
+            using var squaredStddev1 = LContext.GetScalar(true);
+            LContext.PowScalar(stddev1, 2, r: squaredStddev1);
 
-            using var dfStddev2Prod = LContext.MultiplyScalar(
-                LContext.PowScalar(Stddev(data2), 2),
-                data2.Length - 1
-                );
+            using var dfStddev1Prod = LContext.GetScalar(true);
+            LContext.MultiplyScalar(squaredStddev1, data1.Length - 1, r: dfStddev1Prod);
 
-            using var pooledStddevNumer = LContext.Add(dfStddev1Prod, dfStddev2Prod);
+            using var stddev2 = Stddev(data2, sample: true);
+            using var squaredStddev2 = LContext.GetScalar(true);
+            LContext.PowScalar(stddev2, 2, r: squaredStddev2);
+
+            using var dfStddev2Prod = LContext.GetScalar(true);
+            LContext.MultiplyScalar(squaredStddev2, data2.Length - 1, r: dfStddev2Prod);
+
+            using var pooledVarianceNumer = LContext.GetScalar(true);
+            LContext.Add(dfStddev1Prod, dfStddev2Prod, r: pooledVarianceNumer);
             int lengthSum = data1.Length + data2.Length - 2;
 
-            using var result = LContext.GetScalar(true);
-            LContext.DivideScalar(pooledStddevNumer, lengthSum, r: result);
+            using var pooledVariance = LContext.GetScalar(true);
+            LContext.DivideScalar(pooledVarianceNumer, lengthSum, r: pooledVariance);
+            LContext.Synchronize();
 
+            var result = LContext.GetScalar(true);
+            LContext.Sqrt(pooledVariance, r: result);
             LContext.Synchronize();
             return result;
         }
         // one sample t-test, two sample t-test
         public RemoteScalar OneSampleTTest(RemoteVector data, float mu)
         {
+            if (data.Length < 2)
+            {
+                throw new ArgumentException("Sample size must be at least 2.");
+            }
             float sqrtN = MathF.Sqrt(data.Length);
 
             using var stddev = Stddev(data, sample: true);
+            if(stddev.Get() <= 0)
+            {
+                throw new ArgumentException("Standard deviation must not be zero.");
+            }
             using var mean = Mean(data);
 
             using var denom = LContext.GetScalar(true);
@@ -51,22 +63,26 @@ namespace Lavelle.Stats32
 
         public RemoteScalar TwoSampleTTest(RemoteVector data1, RemoteVector data2)
         {
+            if ((data1.Length < 2) || (data2.Length < 2))
+            {
+                throw new ArgumentException("Sample size must be at least 2.");
+            }
+            int n1 = data1.Length;
+            int n2 = data2.Length;
+            float sqrtRecipSampleSize = (float) MathF.Sqrt((1f / n1) + (1f / n2));
+
             using var pooledStddev = PooledStddev(data1, data2);
-            using var meanDiff = LContext.Subtract(Mean(data1), Mean(data2));
-            using var reciprocalSampleSum = LContext.Add(
-                LContext.PowScalar(data1, -1), 
-                LContext.PowScalar(data2, -1)
-                ).AsScalar();
-            using var sqrtReciprocalSampleSum = LContext.Sqrt(
-                LContext.Add(
-                    LContext.PowScalar(data1, -1), 
-                    LContext.PowScalar(data2, -1)
-                    )
-                ).AsScalar();
+            using var mean1 = Mean(data1);
+            using var mean2 = Mean(data2);
+            
+            using var meanDiff = LContext.GetScalar(true);
+            LContext.Subtract(mean1, mean2, r: meanDiff);
+            using var denom = LContext.GetScalar(true);
+            LContext.MultiplyScalar(pooledStddev, sqrtRecipSampleSize, r: denom);
+            LContext.Synchronize();
 
             var result = LContext.GetScalar(true);
-
-            LContext.Divide(meanDiff, LContext.Multiply(sqrtReciprocalSampleSum, pooledStddev), r: result).AsScalar();
+            LContext.Divide(meanDiff, denom, r: result);
 
             LContext.Synchronize();
             return result;
