@@ -11,5 +11,8 @@ var vec1 = new RemoteVector[]
     lctx.GetVector(3).Set([4, 5, 6]).AsVector()
 };
 
-Console.WriteLine("Vec1 [0]: " + string.Join(", ", vec1[0].Get()));
-Console.WriteLine("Vec1 [1]: " + string.Join(", ", vec1[1].Get()));
+float mu = 2;
+
+float one_sample_t_test = sctx.OneSampleTTest(vec1[1], mu).Get();
+Console.WriteLine($"One-sample t-test for vec1[1]: {one_sample_t_test}");
+

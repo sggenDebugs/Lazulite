@@ -1,4 +1,4 @@
-﻿using ILGPU;
+using ILGPU;
 using Lavelle.Lazulite;
 using Lavelle.Linalg32;
 using System;
@@ -28,11 +28,14 @@ namespace Lavelle.Stats32
             return LContext.Sum(vec).AsScalar();
         }
 
-        public RemoteScalar Stddev(RemoteVector data)
+        public RemoteScalar Stddev(RemoteVector data, bool sample = false)
         {
-            using var variance = Variance(data);
+            using var variance = Variance(data, sample);
+            var result = LContext.GetScalar(true);
             LContext.Synchronize();
-            return LContext.Sqrt(variance).AsScalar();
+            LContext.Sqrt(variance, r: result);
+            LContext.Synchronize();
+            return result;
         }
 
         // skewness and kurtosis on gpu

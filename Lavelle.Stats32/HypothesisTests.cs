@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Text;
 using Lavelle.Linalg32;
@@ -32,14 +32,18 @@ namespace Lavelle.Stats32
         // one sample t-test, two sample t-test
         public RemoteScalar OneSampleTTest(RemoteVector data, float mu)
         {
-            int n = data.Length;
-            float sqrtN = MathF.Sqrt(n);
+            float sqrtN = MathF.Sqrt(data.Length);
 
-            using var denom = LContext.DivideScalar(Stddev(data), sqrtN);
-            using var numer = LContext.SubtractScalar(Mean(data), mu);
+            using var stddev = Stddev(data, sample: true);
+            using var mean = Mean(data);
+
+            using var denom = LContext.GetScalar(true);
+            LContext.DivideScalar(stddev, sqrtN, r: denom);
+            using var numer = LContext.GetScalar(true);
+            LContext.SubtractScalar(mean, mu, r: numer);
 
             var result = LContext.GetScalar(true);
-            LContext.Sqrt(LContext.Divide(numer, denom), r: result);
+            LContext.Divide(numer, denom, r: result);
 
             LContext.Synchronize();
             return result;
